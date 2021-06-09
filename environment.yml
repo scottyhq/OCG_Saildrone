@@ -1,0 +1,15 @@
+name: environment_OCG_Saildrone
+channels:
+  - conda-forge
+dependencies:
+  - python=3.6
+  - cartopy
+  - seawater
+  - numpy
+  - pandas
+  - matplotlib
+  - pip
+  - xarray
+  - pip:
+    - PyCO2SYS
+    - ipynb
