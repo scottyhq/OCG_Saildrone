@@ -1,7 +1,7 @@
 # OCG_Saildrone
 Oceanography Camp for Girls Saildrone Lesson
 
-![alt text](https://github.com/Williams-OBGC-Lab/OCG_Saildrone/blob/master/SD_1020_A_6.jpeg)
+![alt text](https://github.com/Williams-OBGC-Lab/OCG_Saildrone/blob/master/Images/SD_1020_A_6.jpeg)
 
 Image credit: NOAA.gov
 
