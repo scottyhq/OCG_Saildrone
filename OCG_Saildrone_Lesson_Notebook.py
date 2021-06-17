@@ -21,6 +21,10 @@
 # * explore https://jupytext.readthedocs.io/en/latest/ to iron out issues with version controlling Jupyter notebooks
 # * add more markdown in the form of instructions, pictures, pulling variables out into their own cell so girls know where they can make changes to the code
 # * in figure titles and filenames, change the variables from using the first four characters (currently var[:4]) to instead cutting off at the first underscore
+#
+#
+#
+# * Nicola says hi - practicing making a commit on personal branch
 
 # ## Data Sources:
 # * Saildrone 1-minute physical and ADCP data available from: https://data.saildrone.com/data/sets/antarctica-circumnavigation-2019
