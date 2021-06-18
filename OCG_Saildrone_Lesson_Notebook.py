@@ -18,10 +18,13 @@
 
 # ## To Do List:
 # * make a function for plotting instead of copy/pasting the map each time (or not, if we want to keep it simple)
-# * explore https://jupytext.readthedocs.io/en/latest/ to iron out issues with version controlling Jupyter notebooks
 # * add more markdown in the form of instructions, pictures, pulling variables out into their own cell so girls know where they can make changes to the code
 # * in figure titles and filenames, change the variables from using the first four characters (currently var[:4]) to instead cutting off at the first underscore
-#
+# * try plotting previous 8-day chl-a snapshot to see if it has better coverage for the eddy crossing
+# * Why is Fig 3 (SSH map) in a scrolling box?
+# * edit to make it easy to adjust time series x-axis limits
+# * Check Veronica's carbon flux calculation is correct (Nancy)
+
 
 # ## Data Sources:
 # * Saildrone 1-minute physical and ADCP data available from: https://data.saildrone.com/data/sets/antarctica-circumnavigation-2019
@@ -41,6 +44,7 @@ import matplotlib.pyplot as plt
 import matplotlib.path as mpath
 import cartopy.crs as ccrs
 import cartopy.feature
+from datetime import datetime
 
 # add something
 # -
@@ -214,19 +218,22 @@ plt.savefig(output_dir + 'Sea_surface_height_Saildrone_Feb10' + '.jpg')
 #
 # We can do the same thing with satellite chlorophyll-a data. The chlorophyll-a data gives an approximate estimate of the relative phytoplankton biomass (in units of mg/m<sup>3</sup>) at the sea surface in different locations. 
 
+#load satellite chl-a data file
+satellite_chla = xr.open_dataset(data_dir + 'A20190412019048.L3m_8D_CHL_chlor_a_4km.nc')
+
+# Here you can edit parameters (colors, range etc) for the map
+
 #set plot parameters (contour levels, colormap etc)
 levels_1 = np.arange(0,1.0,0.01) #contour levels
 cmap_1 = 'YlGnBu' #contour map colormap
 c1 = 'black' #Saildrone track color
 
 # +
-#load satellite chl-a data file
-satellite_chla = xr.open_dataset(data_dir + 'A2019041.L3m_DAY_CHL_chlor_a_4km.nc')
-
 #make a contour plot of chl-a data 
-xr.plot.contourf(satellite_chla.chlor_a,levels=levels_1,cmap=cmap_1,size=8,aspect=2)
-plt.xlim(tlon-30,tlon+30)
-plt.ylim(tlat-20,tlat+20)
+satellite_chla.chlo_a.values[satellite_chla.chlo_a>1000] = np.nan
+xr.plot.contourf(satellite_chla.chlo_a, levels = levels_1, cmap=cmap_1,size=8,aspect=2)
+plt.xlim(tlon-5,tlon+5)
+plt.ylim(tlat-5,tlat+5)
 
 #add Saildrone track
 plt.scatter(Saildrone_phys.longitude, Saildrone_phys.latitude, c=c1, s=3, label='Saildrone', zorder=1000)
@@ -282,13 +289,10 @@ var1_max = 18
 var2_min = 230
 var2_max = 340
 
-#choose color for scatterplot
-c1 = 'b'
-
 # +
 #create scatter plot
 plt.figure(figsize=(12,8))
-plt.scatter(Saildrone_phys[var1], Saildrone_phys[var2], c=c1, s=10)
+plt.scatter(Saildrone_phys[var1], Saildrone_phys[var2], s=10)
 plt.xlim(var1_min,var1_max)
 plt.ylim(var2_min,var2_max)
 plt.xlabel(var1)
@@ -330,11 +334,19 @@ plt.title('Saildrone '+ var1[:4] + ' vs ' + var2[:4])
 plt.savefig(output_dir + 'Saildrone_' + var1[:4] + '_vs_' + var2[:4] + '_vs_' + var3[:4] + '.jpg')
 # -
 
-# Plot time series of wind and pressure data
+# Plot time series of wind speed and pressure
 
-#set plot parameters
-var1 = 'UWND_MEAN'
+#calc wind speed from u and v winds
+Saildrone_phys['WSPD'] = np.sqrt(np.power(Saildrone_phys['UWND_MEAN'],2)+np.power(Saildrone_phys['VWND_MEAN'],2))
+
+# +
+#input plot parameters
+
+#variables to plot
+var1 = 'WSPD'
 var2 = 'BARO_PRES_MEAN'
+
+#set x axis limits
 
 # +
 #plot time series
@@ -346,6 +358,77 @@ plt.xlim(Saildrone_phys.time.values[0],Saildrone_phys.time.values[-1])
 ax2 = plt.subplot(212)
 ax2.plot(Saildrone_phys.time,Saildrone_phys[var2])
 plt.xlim(Saildrone_phys.time.values[0],Saildrone_phys.time.values[-1])
+plt.show()
+# -
+# Next, we can calculate the flux of carbon between the ocean and the atmosphere based on the difference in pCO2 between the atmosphere and the ocean. 
+
+
+# +
+#constants for CO2 flux calculation
+#ocean/atmosphere variables needed as inputs
+T = Saildrone_CO2['SST (C)'] #sea surface temperature
+S  = Saildrone_CO2['Salinity'] #sea surface salinity
+u = Saildrone_CO2['WSPD (m/s)'] #surface wind speed
+dpCO2 = Saildrone_CO2['dpCO2'] #difference between ocean and atmosphere pCO2
+
+#1. Calculate the transfer velocity (Wanninkhof et al. 2014)
+#Schmidt number as a function of temperature 
+Sc = 2116.8-136.25*T  + 4.7353*np.power(T,2) - 0.092307*np.power(T,3) + 0.000755*np.power(T,4)
+K = 0.251*(u*u)*np.power((Sc/660),-0.5)
+K = K
+
+#2. calculate solubility constant as a function of temperature and salinity 
+T_K = T + 273.15
+K0 = -58.0931 + ( 90.5069*(100.0 /T_K) ) \
+    + (22.2940 * (np.log(T_K/100.0))) + (S * (0.027766 +  ( (-0.025888)*(T_K/100.0)) \
+    + (0.0050578*( (T_K/100.0)*(T_K/100.0) ) ) ) )
+a = np.exp(K0)
+
+#CO2 flux equation
+Saildrone_CO2['fCO2'] = 0.24 * K * a * dpCO2  #FCO2 = K*a(dpCO2)
+# -
+
+# Let's plot the time series of carbon fluxes together with the time series of wind speed to see how they are related. Sign of fCO2?
+
+# +
+#variables to plot
+var1 = 'WSPD (m/s)'
+var2 = 'fCO2'
+
+#colors
+c1 = 'darkblue'
+c2 = 'darkorange'
+
+# +
+#convert date and time from Saildrone_CO2 file to numpy datetime64 array
+date_object = np.empty(len(Saildrone_CO2['Date'])).astype(datetime)
+for t in range(len(Saildrone_CO2['Date'])):
+  dt = Saildrone_CO2['Date'].values[t]
+  tm = Saildrone_CO2['Time'].values[t]
+  date_object[t] = np.datetime64(datetime.strptime(dt+' '+tm,'%m/%d/%Y %H:%M'))
+Saildrone_CO2['datetime'] = date_object #save to dataframe
+
+#plot time series
+fig, ax1 = plt.subplots(figsize=(12,5))
+
+#y axis 1
+ax1.plot(Saildrone_CO2['datetime'],Saildrone_CO2[var1],color=c1)
+ax1.set_xlabel('date')
+ax1.set_ylabel(var1, color=c1)
+ax1.tick_params(axis='y', labelcolor=c1)
+
+#y axis 2
+ax2 = ax1.twinx()
+ax2.plot(Saildrone_CO2['datetime'],-Saildrone_CO2[var2],color=c2)
+ax2.set_xlabel('date')
+ax2.set_ylabel(var2, color=c2)
+ax2.tick_params(axis='y', labelcolor=c2)
+
+ax2.plot([Saildrone_CO2['datetime'].values[0], Saildrone_CO2['datetime'].values[-1]],[0,0],
+         color='black', linewidth=0.5)
+plt.xlim(Saildrone_CO2['datetime'][0],Saildrone_CO2['datetime'][1800])
+fig.tight_layout()
+plt.show()
 # -
 
 
