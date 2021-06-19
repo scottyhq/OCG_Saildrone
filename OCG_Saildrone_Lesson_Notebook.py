@@ -385,15 +385,15 @@ K0 = -58.0931 + ( 90.5069*(100.0 /T_K) ) \
 a = np.exp(K0)
 
 #CO2 flux equation
-Saildrone_CO2['fCO2'] = 0.24 * K * a * dpCO2  #FCO2 = K*a(dpCO2)
+Saildrone_CO2['FCO2'] = 0.24 * K * a * dpCO2  #FCO2 = K*a(dpCO2)
 # -
 
-# Let's plot the time series of carbon fluxes together with the time series of wind speed to see how they are related. Sign of fCO2?
+# Let's plot the time series of carbon fluxes together with the time series of wind speed to see how they are related. Sign of FCO2?
 
 # +
 #variables to plot
 var1 = 'WSPD (m/s)'
-var2 = 'fCO2'
+var2 = 'FCO2'
 
 #colors
 c1 = 'darkblue'
