@@ -71,7 +71,7 @@ Saildrone_CO2 = pd.read_csv(
 Saildrone_CO2
 
 # Import the one-minute resolution Saildrone Physical data file
-ds = xr.open_dataset(data_dir + 'saildrone-gen_5-antarctica_circumnavigation_2019-sd1020-20190119T040000-20190803T043000-1_minutes-v1.1620360815446.nc', engine='netcdf4')
+ds = xr.open_dataset(data_dir + 'saildrone-gen_5-antarctica_circumnavigation_2019-sd1020-20190119T040000-20190803T043000-1_minutes-v1.1620360815446.nc')
 Saildrone_phys = ds.to_dataframe()
 Saildrone_phys
 
@@ -183,7 +183,7 @@ plt.show()
 #
 # First we need to load in a single daily satellite sea surface height data file from Feb 10th 2019, the day the Saildrone crossed a large eddy.
 
-satellite_ssh = xr.open_dataset(data_dir + 'ssh_2019_02_10.nc', engine='netcdf4')
+satellite_ssh = xr.open_dataset(data_dir + 'ssh_2019_02_10.nc')
 
 # Now plot the Saildrone path on a map of sea surface height for a region surrounding the Saildrone on Feb 10th
 
@@ -219,7 +219,7 @@ plt.savefig(output_dir + 'Sea_surface_height_Saildrone_Feb10' + '.jpg')
 # We can do the same thing with satellite chlorophyll-a data. The chlorophyll-a data gives an approximate estimate of the relative phytoplankton biomass (in units of mg/m<sup>3</sup>) at the sea surface in different locations. 
 
 #load satellite chl-a data file
-satellite_chla = xr.open_dataset(data_dir + 'A20190412019048.L3m_8D_CHL_chlor_a_4km.nc', engine='netcdf4')
+satellite_chla = xr.open_dataset(data_dir + 'A20190412019048.L3m_8D_CHL_chlor_a_4km.nc')
 
 # Here you can edit parameters (colors, range etc) for the map
 
