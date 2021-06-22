@@ -21,15 +21,14 @@
 # * add more markdown in the form of instructions, pictures, pulling variables out into their own cell so girls know where they can make changes to the code
 # * in figure titles and filenames, change the variables from using the first four characters (currently var[:4]) to instead cutting off at the first underscore
 # * try plotting previous 8-day chl-a snapshot to see if it has better coverage for the eddy crossing
-# * Why is Fig 3 (SSH map) in a scrolling box?
 # * edit to make it easy to adjust time series x-axis limits
 # * Check Veronica's carbon flux calculation is correct (Nancy)
 
 
 # ## Data Sources:
-# * Saildrone 1-minute physical and ADCP data available from: https://data.saildrone.com/data/sets/antarctica-circumnavigation-2019
+# * (too big for Binder so had to remove it) Saildrone 1-minute physical and ADCP data available from: https://data.saildrone.com/data/sets/antarctica-circumnavigation-2019
 # (login required, so cannot be accessed using an FTP. Will need to download ahead)
-# * Saildrone hourly-ish CO2, pH data available from: https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.nodc:0221912
+# * Saildrone hourly-ish CO2, pH, and physical data available from: https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.nodc:0221912
 # * Satellite Chlorophyll: https://neo.sci.gsfc.nasa.gov/view.php?datasetId=MY1DMW_CHLORA&year=2019
 # * SSH: https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-level-global?tab=overview 
 # (login required for chla and SSH, download ahead of time. Can also be downloaded using motuclient, login also required https://github.com/clstoulouse/motu-client-python)
@@ -39,6 +38,7 @@
 import os
 import numpy as np
 import pandas as pd
+import datetime as dt
 import xarray as xr
 import matplotlib.pyplot as plt
 import matplotlib.path as mpath
@@ -67,13 +67,11 @@ Saildrone_CO2 = pd.read_csv(
     header=4,
     na_values=-999,
 )
+
+# Create a datetime object
+Saildrone_CO2['datetime'] = pd.to_datetime(Saildrone_CO2['Date'] + ' ' + Saildrone_CO2['Time'])
 # Check that the Saildrone data was imported correctly
 Saildrone_CO2
-
-# Import the one-minute resolution Saildrone Physical data file
-ds = xr.open_dataset(data_dir + 'saildrone-gen_5-antarctica_circumnavigation_2019-sd1020-20190119T040000-20190803T043000-1_minutes-v1.1620360815446.nc')
-Saildrone_phys = ds.to_dataframe()
-Saildrone_phys
 
 # Import the Southern Ocean fronts for mapping
 stf = pd.read_csv(data_dir + 'fronts/stf.txt', header=None, sep='\s+', 
@@ -120,7 +118,7 @@ plt.plot(sbdy['lon'], sbdy['lat'], color='Blue', transform=ccrs.PlateCarree(),
          label = 'Southern Boundary of ACC')
 
 # Plot the Saildrone in black dots
-plt.scatter(Saildrone_phys.longitude, Saildrone_phys.latitude,
+plt.scatter(Saildrone_CO2.Longitude, Saildrone_CO2.Latitude,
            transform=ccrs.PlateCarree(), c='black', s=3, label='Saildrone', zorder=1000)
 
 # Turn on the legend
@@ -133,7 +131,7 @@ plt.show()
 
 # +
 # Now plot some variable "var" on the map with colored dots
-var = 'TEMP_CTD_RBR_MEAN'
+var = 'SST (C)'
 
 # Make the "bones" of the figure
 plt.figure(figsize=(10, 10))
@@ -165,8 +163,8 @@ plt.plot(sbdy['lon'], sbdy['lat'], color='Blue', transform=ccrs.PlateCarree(),
          label = 'Southern Boundary of ACC')
 
 # Plot the Saildrone in black dots
-plt.scatter(Saildrone_phys.longitude, Saildrone_phys.latitude, 
-            c=Saildrone_phys[var], cmap='bwr',
+plt.scatter(Saildrone_CO2.Longitude, Saildrone_CO2.Latitude, 
+            c=Saildrone_CO2[var], cmap='bwr',
             transform=ccrs.PlateCarree(), s=5, zorder=1000)
 
 # Turn on the legend
@@ -194,18 +192,18 @@ c1 = 'black' #Saildrone track color
 
 # +
 #finding position of Saildrone on Feb 10
-time_index = np.argwhere(Saildrone_phys.time.values==np.datetime64('2019-02-10'))[0]
-tlon = Saildrone_phys.longitude.values[time_index]
-tlat = Saildrone_phys.latitude.values[time_index]
+time_index = np.where(Saildrone_CO2['Date']=='02/10/2019')
+tlon = Saildrone_CO2.Longitude.values[time_index]
+tlat = Saildrone_CO2.Latitude.values[time_index]
 
 #make a contour plot of satellite ssh
 xr.plot.contourf(satellite_ssh.adt[0,:,:],levels=levels_1,cmap=cmap_1,size=8,aspect=2)
 xr.plot.contour(satellite_ssh.adt[0,:,:],levels=levels_1,colors='k',linewidths=0.75)
-plt.xlim(tlon+360-5,tlon+360+5)
-plt.ylim(tlat-5,tlat+5)
+plt.xlim(tlon.min()+360-5,tlon.max()+360+5)
+plt.ylim(tlat.min()-5,tlat.max()+5)
 
 #add Saildrone track
-plt.scatter(Saildrone_phys.longitude+360, Saildrone_phys.latitude, c=c1, s=3, label='Saildrone', zorder=1000)
+plt.scatter(Saildrone_CO2.Longitude+360, Saildrone_CO2.Latitude, c=c1, s=3, label='Saildrone', zorder=1000)
 plt.legend()
 
 #give the plot a title and save figure in the output folder
@@ -232,11 +230,11 @@ c1 = 'black' #Saildrone track color
 #make a contour plot of chl-a data 
 satellite_chla.chlo_a.values[satellite_chla.chlo_a>1000] = np.nan
 xr.plot.contourf(satellite_chla.chlo_a, levels = levels_1, cmap=cmap_1,size=8,aspect=2)
-plt.xlim(tlon-5,tlon+5)
-plt.ylim(tlat-5,tlat+5)
+plt.xlim(tlon.min()-5,tlon.max()+5)
+plt.ylim(tlat.min()-5,tlat.max()+5)
 
 #add Saildrone track
-plt.scatter(Saildrone_phys.longitude, Saildrone_phys.latitude, c=c1, s=3, label='Saildrone', zorder=1000)
+plt.scatter(Saildrone_CO2.Longitude, Saildrone_CO2.Latitude, c=c1, s=3, label='Saildrone', zorder=1000)
 plt.legend()
 
 #save figure
@@ -247,7 +245,7 @@ plt.savefig(output_dir + 'Sea_surface_chlorophylla_Saildrone_Feb10' + '.jpg')
 # Now we can add the Saildrone data observations on the map to start to see if there is a relationship between the satellite observations and what the Saildrone measured directly. Note that the Saildrone took a few days to cross this region, while the satellite data shown here is a snapshot for a single day, so it can be tricky to compare the two types of data because the Saildrone is moving in space AND time.
 
 #choose which variable to plot
-var = 'TEMP_CTD_RBR_MEAN'
+var = 'SST (C)'
 #set minimum and maximum colorbar limits
 v_min = 6
 v_max = 12
@@ -260,11 +258,11 @@ cmap_2 = 'RdBu_r'
 #make a contour plot of satellite ssh
 xr.plot.contourf(satellite_ssh.adt[0,:,:],levels=np.arange(-1.2,0.8,0.1),cmap=cmap_1,size=8,aspect=2)
 xr.plot.contour(satellite_ssh.adt[0,:,:],levels=np.arange(-1.2,0.8,0.1),colors='black',linewidths=0.75)
-plt.xlim(tlon+360-5,tlon+360+5)
-plt.ylim(tlat-5,tlat+5)
+plt.xlim(tlon.min()+360-5,tlon.max()+360+5)
+plt.ylim(tlat.min()-5,tlat.max()+5)
 
 #add Saildrone data scattered on top
-plt.scatter(Saildrone_phys.longitude+360, Saildrone_phys.latitude, c=Saildrone_phys[var], s=15, cmap = cmap_2,
+plt.scatter(Saildrone_CO2.Longitude+360, Saildrone_CO2.Latitude, c=Saildrone_CO2[var], s=15, cmap = cmap_2,
             vmin=v_min,vmax=v_max,label='Saildrone', zorder=1000)
 plt.legend()
 plt.colorbar()
@@ -280,21 +278,21 @@ plt.savefig(output_dir + 'Sea_surface_height_Saildrone_' + var[:4] + '_Feb10' + 
 
 # +
 #choose two variables from the Saildrone to compare
-var1 = 'TEMP_CTD_RBR_MEAN'
-var2 = 'O2_CONC_RBR_MEAN'
+var1 = 'SST (C)'
+var2 = 'pCO2 SW (sat) uatm'
 
 #choose lower and upper limits for the two variables for plotting
 var1_min = -2
 var1_max = 18
-var2_min = 230
-var2_max = 340
+#var2_min = 98
+#var2_max = 102
 
 # +
 #create scatter plot
 plt.figure(figsize=(12,8))
-plt.scatter(Saildrone_phys[var1], Saildrone_phys[var2], s=10)
+plt.scatter(Saildrone_CO2[var1], Saildrone_CO2[var2], s=10)
 plt.xlim(var1_min,var1_max)
-plt.ylim(var2_min,var2_max)
+#plt.ylim(var2_min,var2_max)
 plt.xlabel(var1)
 plt.ylabel(var2)
 plt.grid()
@@ -310,7 +308,7 @@ plt.savefig(output_dir + 'Saildrone_' + var1[:4] + '_vs_' + var2[:4] + '.jpg')
 
 # +
 #choose a third variable 
-var3 = 'latitude'
+var3 = 'Latitude'
 
 #set lower and upper limits of variable 3 for plotting
 var3_min = -65
@@ -319,10 +317,10 @@ var3_max = -40
 # +
 #create scatter plot
 plt.figure(figsize=(12,8))
-plt.scatter(Saildrone_phys[var1], Saildrone_phys[var2], c=Saildrone_phys[var3], 
+plt.scatter(Saildrone_CO2[var1], Saildrone_CO2[var2], c=Saildrone_CO2[var3], 
             s=10, vmin = var3_min, vmax = var3_max)
 plt.xlim(var1_min,var1_max)
-plt.ylim(var2_min,var2_max)
+#plt.ylim(var2_min,var2_max)
 plt.xlabel(var1)
 plt.ylabel(var2)
 plt.grid()
@@ -336,15 +334,12 @@ plt.savefig(output_dir + 'Saildrone_' + var1[:4] + '_vs_' + var2[:4] + '_vs_' + 
 
 # Plot time series of wind speed and pressure
 
-#calc wind speed from u and v winds
-Saildrone_phys['WSPD'] = np.sqrt(np.power(Saildrone_phys['UWND_MEAN'],2)+np.power(Saildrone_phys['VWND_MEAN'],2))
-
 # +
 #input plot parameters
 
 #variables to plot
-var1 = 'WSPD'
-var2 = 'BARO_PRES_MEAN'
+var1 = 'WSPD (m/s)'
+var2 = 'Licor Atm Pressure (hPa)'
 
 #set x axis limits
 
@@ -352,12 +347,12 @@ var2 = 'BARO_PRES_MEAN'
 #plot time series
 plt.figure(figsize=(12,5))
 ax1 = plt.subplot(211)
-ax1.plot(Saildrone_phys.time,Saildrone_phys[var1])
-plt.xlim(Saildrone_phys.time.values[0],Saildrone_phys.time.values[-1])
+ax1.plot(Saildrone_CO2.datetime,Saildrone_CO2[var1])
+plt.xlim(Saildrone_CO2.datetime.values[0],Saildrone_CO2.datetime.values[-1])
 
 ax2 = plt.subplot(212)
-ax2.plot(Saildrone_phys.time,Saildrone_phys[var2])
-plt.xlim(Saildrone_phys.time.values[0],Saildrone_phys.time.values[-1])
+ax2.plot(Saildrone_CO2.datetime,Saildrone_CO2[var2])
+plt.xlim(Saildrone_CO2.datetime.values[0],Saildrone_CO2.datetime.values[-1])
 plt.show()
 # -
 # Next, we can calculate the flux of carbon between the ocean and the atmosphere based on the difference in pCO2 between the atmosphere and the ocean. 
@@ -400,14 +395,6 @@ c1 = 'darkblue'
 c2 = 'darkorange'
 
 # +
-#convert date and time from Saildrone_CO2 file to numpy datetime64 array
-date_object = np.empty(len(Saildrone_CO2['Date'])).astype(datetime)
-for t in range(len(Saildrone_CO2['Date'])):
-  dt = Saildrone_CO2['Date'].values[t]
-  tm = Saildrone_CO2['Time'].values[t]
-  date_object[t] = np.datetime64(datetime.strptime(dt+' '+tm,'%m/%d/%Y %H:%M'))
-Saildrone_CO2['datetime'] = date_object #save to dataframe
-
 #plot time series
 fig, ax1 = plt.subplots(figsize=(12,5))
 
