@@ -10,6 +10,7 @@ dependencies:
   - matplotlib
   - pip
   - xarray
+  - jupytext
   - pip:
     - PyCO2SYS
     - ipynb
