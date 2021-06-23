@@ -17,6 +17,7 @@
 # Developed by Nancy Williams, Veronica Tamsitt, Nicola Guisewhite at University of South Florida College of Marine Science
 
 # ## To Do List:
+# * remove all fronts except SAF and SBDY for simplicity
 # * make a function for plotting instead of copy/pasting the map each time (or not, if we want to keep it simple)
 # * add more markdown in the form of instructions, pictures, pulling variables out into their own cell so girls know where they can make changes to the code
 # * in figure titles and filenames, change the variables from using the first four characters (currently var[:4]) to instead cutting off at the first underscore
