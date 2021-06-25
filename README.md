@@ -1,5 +1,5 @@
 # OCG_Saildrone
-Oceanography Camp for Girls Saildrone Lesson
+Oceanography Camp for Girls Saildrone Lesson * WORK IN PROGRESS*
 
 ![A photo of a Saildone, an autonomous sailing vehicle](https://github.com/Williams-OBGC-Lab/OCG_Saildrone/blob/master/Images/SD_1020_A_6.jpeg)
 
