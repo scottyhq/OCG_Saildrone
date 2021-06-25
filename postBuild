@@ -1,4 +1,3 @@
 #!/bin/bash
 set -e
 jupyter lab build
-jupyter labextension install jupyterlab-jupytext
