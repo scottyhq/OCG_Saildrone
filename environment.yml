@@ -2,18 +2,18 @@ name: environment_OCG_Saildrone
 channels:
   - conda-forge
 dependencies:
-  - python=3.6
+  - bottleneck
   - cartopy
-  - seawater
+  - dask
+  - jupytext
+  - jupyterlab>=3
+  - matplotlib
+  - netcdf4
   - numpy
   - pandas
-  - matplotlib
   - pip
+  - python
+  - seawater
   - xarray
-  - dask
-  - netcdf4
-  - bottleneck
-  - jupytext
   - pip:
     - PyCO2SYS
-    - ipynb
